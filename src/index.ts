@@ -1,28 +1,21 @@
 import { PrismaClient } from '@prisma/client'
+import express from 'express'
+import dotenv from "dotenv";
+import { blogRouter } from './routes/blogRoutes';
+dotenv.config()
 
 const prisma = new PrismaClient()
+const app = express()
+const port = process.env.PORT;
 
-async function main() {
-  const newUser = await prisma.user.create({
-    data: {
-      name: 'Alice',
-      email: 'alice@prisma.io',
-      posts: {
-        create: {
-          title: 'Hello World',
-        },
-      },
-    },
-  })
-  console.log('Created new user: ', newUser)
+app.use(express.json())
+app.use('/api', blogRouter);
 
-  const allUsers = await prisma.user.findMany({
-    include: { posts: true },
-  })
-  console.log('All users: ')
-  console.dir(allUsers, { depth: null })
-}
+app.get('/users', async (req, res) => {
+  const users = await prisma.user.findMany()
+  res.json(users)
+})
 
-main()
-  .catch((e) => console.error(e))
-  .finally(async () => await prisma.$disconnect())
+app.listen(port, () =>
+  console.log(`REST API server ready at: http://localhost:${port}`)
+)
